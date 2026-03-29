@@ -1,0 +1,134 @@
+:root {
+  --bg-primary: #1a1a2e;
+  --bg-secondary: #16213e;
+  --bg-card: #0f3460;
+  --bg-surface: #1a1a3e;
+  --text-primary: #e8e8e8;
+  --text-secondary: #a0a0b0;
+  --text-accent: #ffd700;
+  --prosecution: #e74c3c;
+  --defense: #2ecc71;
+  --judge: #f39c12;
+  --guilty: #e74c3c;
+  --not-guilty: #2ecc71;
+  --objection-red: #ff2d2d;
+  --border: #2a2a4a;
+  --button-primary: #533483;
+  --button-hover: #6c44a8;
+  --timer-warn: #e74c3c;
+  --font-main: 'Noto Sans JP', 'Hiragino Sans', sans-serif;
+  --radius: 8px;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-main);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+button {
+  cursor: pointer;
+  font-family: var(--font-main);
+  border: none;
+  border-radius: var(--radius);
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+input, textarea {
+  font-family: var(--font-main);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  padding: 10px 14px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+input:focus, textarea:focus {
+  border-color: var(--text-accent);
+}
+
+textarea {
+  resize: none;
+}
+
+.btn-primary {
+  background: var(--button-primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--button-hover);
+}
+
+.btn-prosecution {
+  background: var(--prosecution);
+  color: white;
+}
+
+.btn-defense {
+  background: var(--defense);
+  color: white;
+}
+
+.btn-objection {
+  background: var(--objection-red);
+  color: white;
+  font-size: 18px;
+  font-weight: 900;
+  padding: 14px 28px;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 15px rgba(255, 45, 45, 0.4);
+}
+
+.btn-objection:hover {
+  box-shadow: 0 6px 20px rgba(255, 45, 45, 0.6);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}

@@ -1,4 +1,4 @@
-import { GameRoom, Player, Phase } from '../types/game.js';
+import { GameRoom, Player } from '../types/game.js';
 
 const rooms = new Map<string, GameRoom>();
 
@@ -20,6 +20,7 @@ export function createRoom(hostSocketId: string, hostName: string): GameRoom {
     name: hostName,
     role: 'spectator',
     ready: false,
+    hp: 5,
   };
   const room: GameRoom = {
     code,
@@ -39,9 +40,8 @@ export function createRoom(hostSocketId: string, hostName: string): GameRoom {
     timer: null,
     timerEnd: 0,
     timerDuration: 0,
-    witnessOnStand: null,
-    witnessChat: [],
-    witnessExchanges: 0,
+    currentWitnessIndex: -1,
+    witnessExamTurn: null,
     createdAt: Date.now(),
   };
   rooms.set(code, room);
@@ -58,6 +58,7 @@ export function joinRoom(code: string, socketId: string, name: string): { room: 
     name,
     role: 'spectator',
     ready: false,
+    hp: 5,
   };
   room.players.set(playerId, player);
   return { room, playerId };

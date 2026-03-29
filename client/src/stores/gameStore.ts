@@ -1,8 +1,7 @@
 import { create } from 'zustand';
-import type { GameState, Phase, PlayerInfo, JurorState, Evidence, ChatMessage, ObjectionResult, JurorVerdictReveal } from '../types/game';
+import type { GameState, Phase, PlayerInfo, JurorState, Evidence, ChatMessage, JurorVerdictReveal, TestimonyStatement, HpState } from '../types/game';
 
 interface GameStore extends GameState {
-  // Setters
   setRoomCode: (code: string) => void;
   setMyPlayerId: (id: string) => void;
   setMyRole: (role: GameState['myRole']) => void;
@@ -20,12 +19,16 @@ interface GameStore extends GameState {
   setObjectionsRemaining: (obj: { prosecution: number; defense: number }) => void;
   setTimer: (t: number) => void;
   setTimerMax: (t: number) => void;
-  setWitnessOnStand: (w: GameState['witnessOnStand']) => void;
-  setWitnessChat: (c: GameState['witnessChat']) => void;
-  addWitnessChat: (entry: { role: string; content: string }) => void;
+  setHp: (hp: HpState) => void;
+  updateHp: (role: 'prosecution' | 'defense', hp: number) => void;
+  setTestimonyStatements: (s: TestimonyStatement[]) => void;
+  addTestimonyStatement: (s: TestimonyStatement) => void;
+  updateTestimonyStatement: (index: number, update: Partial<TestimonyStatement>) => void;
+  setCurrentWitnessName: (name: string) => void;
   addVerdictReveal: (v: JurorVerdictReveal) => void;
   setTruth: (t: GameState['truth']) => void;
   setWinner: (w: GameState['winner']) => void;
+  removePublicEvidence: (id: string) => void;
   reset: () => void;
 }
 
@@ -46,8 +49,9 @@ const initialState: GameState = {
   objectionsRemaining: { prosecution: 3, defense: 3 },
   timer: 0,
   timerMax: 0,
-  witnessOnStand: null,
-  witnessChat: [],
+  hp: { prosecution: 5, defense: 5 },
+  testimonyStatements: [],
+  currentWitnessName: '',
   verdictRevealed: [],
   truth: null,
   winner: null,
@@ -72,11 +76,17 @@ export const useGameStore = create<GameStore>((set) => ({
   setObjectionsRemaining: (obj) => set({ objectionsRemaining: obj }),
   setTimer: (t) => set({ timer: t }),
   setTimerMax: (t) => set({ timerMax: t }),
-  setWitnessOnStand: (w) => set({ witnessOnStand: w }),
-  setWitnessChat: (c) => set({ witnessChat: c }),
-  addWitnessChat: (entry) => set((s) => ({ witnessChat: [...s.witnessChat, entry] })),
+  setHp: (hp) => set({ hp }),
+  updateHp: (role, hp) => set((s) => ({ hp: { ...s.hp, [role]: hp } })),
+  setTestimonyStatements: (s) => set({ testimonyStatements: s }),
+  addTestimonyStatement: (s) => set((st) => ({ testimonyStatements: [...st.testimonyStatements, s] })),
+  updateTestimonyStatement: (index, update) => set((s) => ({
+    testimonyStatements: s.testimonyStatements.map(t => t.index === index ? { ...t, ...update } : t),
+  })),
+  setCurrentWitnessName: (name) => set({ currentWitnessName: name }),
   addVerdictReveal: (v) => set((s) => ({ verdictRevealed: [...s.verdictRevealed, v] })),
   setTruth: (t) => set({ truth: t }),
   setWinner: (w) => set({ winner: w }),
+  removePublicEvidence: (id) => set((s) => ({ publicEvidence: s.publicEvidence.filter(e => e.id !== id) })),
   reset: () => set(initialState),
 }));

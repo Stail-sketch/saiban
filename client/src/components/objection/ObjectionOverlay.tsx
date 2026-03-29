@@ -18,44 +18,30 @@ export function ObjectionOverlay() {
   if (!visible) return null;
 
   return (
-    <div className="objection-overlay" style={styles.overlay}>
-      <div className="objection-text" style={styles.text}>
+    <div className="objection-overlay" style={{
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      display: 'flex', flexDirection: 'column' as const,
+      justifyContent: 'center', alignItems: 'center', zIndex: 9999,
+      background: 'linear-gradient(135deg, rgba(200,0,0,0.95), rgba(150,0,0,0.98))',
+    }}>
+      <div className="objection-text" style={{
+        fontFamily: 'var(--font-display)',
+        fontSize: 80,
+        color: 'white',
+        textShadow: '0 4px 40px rgba(0,0,0,0.7), 0 0 80px rgba(255,200,0,0.4), 0 0 120px rgba(255,100,0,0.3)',
+        letterSpacing: 12,
+      }}>
         異議アリ！
       </div>
       <div style={{
-        ...styles.side,
-        color: side === 'prosecution' ? 'var(--prosecution)' : 'var(--defense)',
+        fontFamily: 'var(--font-display)',
+        fontSize: 20,
+        color: side === 'prosecution' ? '#ffaaaa' : '#aaffcc',
+        marginTop: 8,
+        letterSpacing: 4,
       }}>
         — {side === 'prosecution' ? '検察官' : '弁護人'}
       </div>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  overlay: {
-    position: 'fixed' as const,
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    display: 'flex',
-    flexDirection: 'column' as const,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 9999,
-    background: 'rgba(255, 0, 0, 0.9)',
-  },
-  text: {
-    fontSize: 72,
-    fontWeight: 900,
-    color: 'white',
-    textShadow: '0 4px 30px rgba(0,0,0,0.5), 0 0 60px rgba(255,255,255,0.3)',
-    letterSpacing: 8,
-  },
-  side: {
-    fontSize: 24,
-    fontWeight: 700,
-    marginTop: 12,
-  },
-};

@@ -9,107 +9,64 @@ export function VerdictReveal() {
   const notGuiltyCount = verdictRevealed.filter(v => v.vote === '無罪').length;
 
   return (
-    <div style={styles.container}>
-      <h2 style={styles.title}>評決</h2>
+    <div style={{
+      display: 'flex', flexDirection: 'column' as const, alignItems: 'center', justifyContent: 'center',
+      height: '100%', padding: 20, gap: 20,
+      background: 'radial-gradient(ellipse at center, #1a1028 0%, #0a0a12 70%)',
+    }}>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 26, color: 'var(--text-accent)', letterSpacing: 6 }}>
+        評　決
+      </h2>
 
-      <div style={styles.jurorGrid}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, width: '100%', maxWidth: 480 }}>
         {jurors.map((j, i) => {
-          const revealed = verdictRevealed.find(v => v.index === i);
+          const rev = verdictRevealed.find(v => v.index === i);
           return (
-            <div key={i} className={revealed ? 'card-reveal' : ''} style={{
-              ...styles.jurorCard,
-              background: !revealed ? 'var(--bg-card)'
-                        : revealed.vote === '有罪' ? 'rgba(231,76,60,0.3)' : 'rgba(46,204,113,0.3)',
-              border: revealed ? `2px solid ${revealed.vote === '有罪' ? 'var(--guilty)' : 'var(--not-guilty)'}` : '2px solid var(--border)',
+            <div key={i} className={rev ? 'card-reveal' : ''} style={{
+              padding: 16, borderRadius: 10, textAlign: 'center' as const,
+              background: !rev ? 'var(--bg-card)' : rev.vote === '有罪' ? 'rgba(255,51,51,0.15)' : 'rgba(51,204,119,0.15)',
+              border: rev ? `2px solid ${rev.vote === '有罪' ? 'var(--guilty)' : 'var(--not-guilty)'}` : '2px solid var(--border)',
+              boxShadow: rev ? `0 0 20px ${rev.vote === '有罪' ? 'rgba(255,51,51,0.2)' : 'rgba(51,204,119,0.2)'}` : 'none',
             }}>
-              <div style={styles.jurorName}>{j.nickname}</div>
-              {revealed ? (
+              <div style={{ fontWeight: 900, fontSize: 13, marginBottom: 6 }}>{j.nickname}</div>
+              {rev ? (
                 <div style={{
-                  fontSize: 24,
-                  fontWeight: 900,
-                  color: revealed.vote === '有罪' ? 'var(--guilty)' : 'var(--not-guilty)',
-                }}>
-                  {revealed.vote}
-                </div>
+                  fontFamily: 'var(--font-display)', fontSize: 22,
+                  color: rev.vote === '有罪' ? 'var(--guilty)' : 'var(--not-guilty)',
+                }}>{rev.vote}</div>
               ) : (
-                <div style={{ fontSize: 24, color: 'var(--text-secondary)' }}>？</div>
+                <div style={{ fontSize: 28, color: 'var(--text-secondary)' }}>?</div>
               )}
             </div>
           );
         })}
       </div>
 
-      <div style={styles.tally}>
-        <span style={{ color: 'var(--guilty)', fontSize: 28, fontWeight: 900 }}>有罪 {guiltyCount}</span>
-        <span style={{ color: 'var(--text-secondary)', fontSize: 20 }}> — </span>
-        <span style={{ color: 'var(--not-guilty)', fontSize: 28, fontWeight: 900 }}>無罪 {notGuiltyCount}</span>
+      <div style={{
+        textAlign: 'center' as const, padding: '12px 32px',
+        background: 'var(--bg-secondary)', borderRadius: 8, border: '1px solid var(--border-gold)',
+      }}>
+        <span style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: 'var(--guilty)' }}>{guiltyCount}</span>
+        <span style={{ margin: '0 12px', color: 'var(--text-secondary)' }}>vs</span>
+        <span style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: 'var(--not-guilty)' }}>{notGuiltyCount}</span>
       </div>
 
       {winner && (
-        <div className="verdict-appear" style={{
-          ...styles.verdict,
-          color: guiltyCount >= 4 ? 'var(--guilty)' : 'var(--not-guilty)',
-        }}>
-          {guiltyCount >= 4 ? '有 罪' : '無 罪'}
-        </div>
-      )}
-
-      {winner && (
-        <div className="fade-in" style={styles.winnerText}>
-          {winner === 'prosecution' ? '検察官の勝利！' : '弁護人の勝利！'}
-        </div>
+        <>
+          <div className="verdict-appear" style={{
+            fontFamily: 'var(--font-display)', fontSize: 72, letterSpacing: 20,
+            color: guiltyCount >= 4 ? 'var(--guilty)' : 'var(--not-guilty)',
+            textShadow: `0 0 40px ${guiltyCount >= 4 ? 'rgba(255,51,51,0.5)' : 'rgba(51,204,119,0.5)'}`,
+          }}>
+            {guiltyCount >= 4 ? '有罪' : '無罪'}
+          </div>
+          <div className="fade-in" style={{
+            fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--text-accent)', letterSpacing: 4,
+          }}>
+            {winner === 'prosecution' ? '検察官の勝利' : '弁護人の勝利'}
+          </div>
+        </>
       )}
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100%',
-    padding: 20,
-    gap: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 900,
-    color: 'var(--text-accent)',
-  },
-  jurorGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: 12,
-    width: '100%',
-    maxWidth: 500,
-  },
-  jurorCard: {
-    padding: '16px',
-    borderRadius: 10,
-    textAlign: 'center' as const,
-  },
-  jurorName: {
-    fontSize: 13,
-    fontWeight: 700,
-    marginBottom: 8,
-  },
-  tally: {
-    textAlign: 'center' as const,
-    padding: '12px 24px',
-    background: 'var(--bg-secondary)',
-    borderRadius: 8,
-  },
-  verdict: {
-    fontSize: 64,
-    fontWeight: 900,
-    letterSpacing: 16,
-    textShadow: '0 4px 20px rgba(0,0,0,0.5)',
-  },
-  winnerText: {
-    fontSize: 20,
-    fontWeight: 700,
-    color: 'var(--text-accent)',
-  },
-};

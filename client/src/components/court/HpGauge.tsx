@@ -4,68 +4,33 @@ export function HpGauge() {
   const hp = useGameStore(s => s.hp);
 
   return (
-    <div style={styles.container}>
-      <GaugeBar label="検察" hp={hp.prosecution} color="var(--prosecution)" />
-      <GaugeBar label="弁護" hp={hp.defense} color="var(--defense)" />
+    <div style={{ display: 'flex', gap: 20, padding: '4px 0' }}>
+      <Bar label="検察" hp={hp.prosecution} color="var(--prosecution)" />
+      <Bar label="弁護" hp={hp.defense} color="var(--defense)" />
     </div>
   );
 }
 
-function GaugeBar({ label, hp, color }: { label: string; hp: number; color: string }) {
-  const maxHp = 5;
-  const pct = (hp / maxHp) * 100;
-
+function Bar({ label, hp, color }: { label: string; hp: number; color: string }) {
+  const max = 5;
   return (
-    <div style={styles.gauge}>
-      <span style={{ ...styles.label, color }}>{label}</span>
-      <div style={styles.barBg}>
-        <div style={{
-          ...styles.barFill,
-          width: `${pct}%`,
-          background: hp <= 1 ? 'var(--timer-warn)' : color,
-        }} className={hp <= 1 ? 'pulse' : ''} />
+    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, color, width: 28 }}>{label}</span>
+      <div style={{ flex: 1, display: 'flex', gap: 3 }}>
+        {Array.from({ length: max }).map((_, i) => (
+          <div key={i} style={{
+            flex: 1, height: 10, borderRadius: 2,
+            background: i < hp ? color : 'var(--bg-card)',
+            boxShadow: i < hp ? `0 0 6px ${color}40` : 'none',
+            transition: 'all 0.4s',
+            opacity: i < hp ? 1 : 0.3,
+          }} className={hp <= 1 && i < hp ? 'pulse' : ''} />
+        ))}
       </div>
-      <span style={{ ...styles.hpText, color: hp <= 1 ? 'var(--timer-warn)' : 'var(--text-primary)' }}>
-        {hp}/{maxHp}
-      </span>
+      <span style={{
+        fontFamily: 'monospace', fontWeight: 900, fontSize: 12, width: 20, textAlign: 'right' as const,
+        color: hp <= 1 ? 'var(--timer-warn)' : 'var(--text-primary)',
+      }}>{hp}</span>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    display: 'flex',
-    gap: 16,
-    padding: '6px 0',
-  },
-  gauge: {
-    flex: 1,
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-  },
-  label: {
-    fontWeight: 900,
-    fontSize: 12,
-    width: 30,
-  },
-  barBg: {
-    flex: 1,
-    height: 12,
-    background: 'var(--bg-card)',
-    borderRadius: 6,
-    overflow: 'hidden',
-  },
-  barFill: {
-    height: '100%',
-    borderRadius: 6,
-    transition: 'width 0.5s ease, background 0.3s',
-  },
-  hpText: {
-    fontSize: 13,
-    fontWeight: 900,
-    fontFamily: 'monospace',
-    width: 30,
-    textAlign: 'right' as const,
-  },
-};

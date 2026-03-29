@@ -9,66 +9,56 @@ export function ChatArea() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length]);
 
+  const roleStyle = (role: string) => {
+    switch (role) {
+      case 'judge': return { color: 'var(--judge)', icon: '&#x2696;' };
+      case 'prosecution': return { color: 'var(--prosecution)', icon: '&#x1F525;' };
+      case 'defense': return { color: 'var(--defense)', icon: '&#x1F6E1;' };
+      case 'witness': return { color: '#cc88ff', icon: '&#x1F464;' };
+      default: return { color: 'var(--text-secondary)', icon: '&#x2139;' };
+    }
+  };
+
+  const roleLabel = (role: string) => {
+    switch (role) {
+      case 'judge': return '裁判長'; case 'prosecution': return '検察';
+      case 'defense': return '弁護'; case 'witness': return '証人';
+      default: return 'SYS';
+    }
+  };
+
   return (
-    <div style={styles.container}>
-      <div style={styles.header}>法廷記録</div>
-      <div style={styles.messages}>
-        {messages.map(msg => (
-          <div key={msg.id} style={styles.msg} className="fade-in">
-            <span style={{
-              fontWeight: 700,
-              color: msg.senderRole === 'judge' ? 'var(--judge)'
-                   : msg.senderRole === 'prosecution' ? 'var(--prosecution)'
-                   : msg.senderRole === 'defense' ? 'var(--defense)'
-                   : 'var(--text-secondary)',
-              fontSize: 12,
+    <div style={{
+      display: 'flex', flexDirection: 'column' as const, height: '100%',
+      background: 'linear-gradient(180deg, #12121e, #0e0e18)',
+      borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border)',
+    }}>
+      <div style={{
+        padding: '6px 12px', fontFamily: 'var(--font-display)', fontSize: 11,
+        color: 'var(--text-accent)', letterSpacing: 2,
+        borderBottom: '1px solid var(--border)', background: 'rgba(255,215,0,0.03)',
+      }}>
+        COURT RECORD
+      </div>
+      <div style={{ flex: 1, overflowY: 'auto' as const, padding: 8, display: 'flex', flexDirection: 'column' as const, gap: 4 }}>
+        {messages.map(msg => {
+          const rs = roleStyle(msg.senderRole);
+          const isSpecial = msg.type === 'hp_change' || msg.type === 'testimony_break' || msg.type === 'bluff_caught';
+          return (
+            <div key={msg.id} className="fade-in" style={{
+              padding: '5px 8px', borderRadius: 4,
+              borderLeft: `3px solid ${rs.color}`,
+              background: isSpecial ? 'rgba(255,68,68,0.08)' : 'transparent',
             }}>
-              {msg.senderRole === 'judge' ? '裁判長'
-               : msg.senderRole === 'prosecution' ? '検察'
-               : msg.senderRole === 'defense' ? '弁護'
-               : 'システム'}
-              ：{msg.sender}
-            </span>
-            <div style={styles.content}>{msg.content}</div>
-          </div>
-        ))}
+              <span style={{ fontWeight: 900, fontSize: 11, color: rs.color }}>
+                [{roleLabel(msg.senderRole)}] {msg.sender}
+              </span>
+              <div style={{ fontSize: 13, marginTop: 1, lineHeight: 1.5 }}>{msg.content}</div>
+            </div>
+          );
+        })}
         <div ref={bottomRef} />
       </div>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    height: '100%',
-    background: 'var(--bg-secondary)',
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  header: {
-    padding: '8px 12px',
-    fontWeight: 700,
-    fontSize: 13,
-    borderBottom: '1px solid var(--border)',
-    color: 'var(--text-accent)',
-  },
-  messages: {
-    flex: 1,
-    overflowY: 'auto' as const,
-    padding: 10,
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: 8,
-  },
-  msg: {
-    padding: '6px 0',
-    borderBottom: '1px solid rgba(42,42,74,0.5)',
-  },
-  content: {
-    fontSize: 14,
-    marginTop: 2,
-    lineHeight: 1.5,
-  },
-};

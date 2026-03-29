@@ -14,7 +14,7 @@ export function JurorCard({ juror, flipped, onClick, selected }: Props) {
   useEffect(() => {
     if (flipped) {
       setAnimating(true);
-      const t = setTimeout(() => setAnimating(false), 600);
+      const t = setTimeout(() => setAnimating(false), 700);
       return () => clearTimeout(t);
     }
   }, [flipped, juror.vote]);
@@ -26,85 +26,51 @@ export function JurorCard({ juror, flipped, onClick, selected }: Props) {
       onClick={onClick}
       className={animating ? 'vote-flip' : ''}
       style={{
-        ...styles.card,
-        borderColor: selected ? 'var(--text-accent)' : isGuilty ? 'var(--guilty)' : 'var(--not-guilty)',
+        background: 'linear-gradient(180deg, #1e1e36 0%, #14142a 100%)',
+        borderRadius: 8,
+        padding: '8px 10px',
+        border: `2px solid ${selected ? 'var(--text-accent)' : isGuilty ? 'rgba(255,51,51,0.5)' : 'rgba(51,204,119,0.5)'}`,
         cursor: onClick ? 'pointer' : 'default',
-        opacity: juror.locked ? 0.6 : 1,
+        opacity: juror.locked ? 0.5 : 1,
+        transition: 'all 0.3s',
+        position: 'relative' as const,
+        boxShadow: selected ? '0 0 15px rgba(255,215,0,0.2)' : 'none',
       }}
     >
-      <div style={styles.header}>
-        <span style={styles.name}>{juror.nickname}</span>
-        <span style={{ ...styles.type, fontSize: 10 }}>({juror.type})</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+        <span style={{ fontWeight: 900, fontSize: 12, color: 'var(--text-primary)' }}>
+          {juror.name}
+        </span>
+        <span style={{ fontSize: 9, color: 'var(--text-secondary)', background: 'var(--bg-card)', padding: '1px 5px', borderRadius: 3 }}>
+          {juror.type}
+        </span>
       </div>
       <div style={{
-        ...styles.vote,
-        background: isGuilty ? 'var(--guilty)' : 'var(--not-guilty)',
+        textAlign: 'center' as const,
+        padding: '3px 0',
+        borderRadius: 4,
+        fontFamily: 'var(--font-display)',
+        fontSize: 13,
+        color: 'white',
+        background: isGuilty
+          ? 'linear-gradient(90deg, #cc2222, #ff3333)'
+          : 'linear-gradient(90deg, #22aa66, #33cc77)',
+        boxShadow: isGuilty ? '0 2px 8px rgba(255,51,51,0.3)' : '0 2px 8px rgba(51,204,119,0.3)',
+        marginBottom: 4,
       }}>
         {juror.vote}
       </div>
-      <div style={styles.comment}>
-        「{juror.comment || '...'}」
+      <div style={{ fontSize: 10, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+        {juror.comment || '...'}
       </div>
-      {juror.locked && <div style={styles.locked}>LOCKED</div>}
-      <div style={styles.stars}>
+      {juror.locked && (
+        <div style={{ position: 'absolute' as const, top: 3, right: 5, fontSize: 8, color: 'var(--timer-warn)', fontWeight: 900, letterSpacing: 1 }}>
+          LOCK
+        </div>
+      )}
+      <div style={{ fontSize: 9, color: 'var(--text-accent)', marginTop: 2, letterSpacing: 1 }}>
         {'★'.repeat(juror.persuadability)}{'☆'.repeat(5 - juror.persuadability)}
       </div>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  card: {
-    background: 'var(--bg-card)',
-    borderRadius: 8,
-    padding: '10px 12px',
-    border: '2px solid',
-    transition: 'all 0.3s',
-    position: 'relative',
-    minWidth: 0,
-  },
-  header: {
-    marginBottom: 6,
-  },
-  name: {
-    fontWeight: 700,
-    fontSize: 13,
-    display: 'block',
-    whiteSpace: 'nowrap' as const,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-  },
-  type: {
-    color: 'var(--text-secondary)',
-  },
-  vote: {
-    textAlign: 'center' as const,
-    padding: '4px 8px',
-    borderRadius: 4,
-    fontWeight: 900,
-    fontSize: 14,
-    color: 'white',
-    marginBottom: 6,
-  },
-  comment: {
-    fontSize: 11,
-    color: 'var(--text-secondary)',
-    lineHeight: 1.4,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap' as const,
-  },
-  locked: {
-    position: 'absolute' as const,
-    top: 4,
-    right: 4,
-    fontSize: 9,
-    color: 'var(--timer-warn)',
-    fontWeight: 900,
-  },
-  stars: {
-    fontSize: 10,
-    color: 'var(--text-accent)',
-    marginTop: 4,
-  },
-};

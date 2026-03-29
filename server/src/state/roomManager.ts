@@ -14,34 +14,23 @@ function generateCode(): string {
 export function createRoom(hostSocketId: string, hostName: string): GameRoom {
   const code = generateCode();
   const playerId = crypto.randomUUID();
-  const host: Player = {
-    id: playerId,
-    socketId: hostSocketId,
-    name: hostName,
-    role: 'spectator',
-    ready: false,
-    hp: 5,
-  };
+  const host: Player = { id: playerId, socketId: hostSocketId, name: hostName, ready: false, hp: 5 };
   const room: GameRoom = {
     code,
     host: playerId,
     players: new Map([[playerId, host]]),
     phase: 'lobby',
     scenario: null,
-    jurors: [],
-    publicEvidence: [],
+    collectedEvidence: [],
     chatMessages: [],
-    currentTurn: null,
-    turnNumber: 0,
-    maxTurns: 10,
-    prosecutionTurns: 0,
-    defenseTurns: 0,
-    objectionsRemaining: { prosecution: 3, defense: 3 },
+    currentWitnessIndex: 0,
+    currentStatementIndex: 0,
+    penaltyCount: 0,
+    maxPenalties: 5,
     timer: null,
     timerEnd: 0,
     timerDuration: 0,
-    currentWitnessIndex: -1,
-    witnessExamTurn: null,
+    testimonyLoop: 0,
     createdAt: Date.now(),
   };
   rooms.set(code, room);
@@ -52,54 +41,17 @@ export function joinRoom(code: string, socketId: string, name: string): { room: 
   const room = rooms.get(code);
   if (!room || room.phase !== 'lobby') return null;
   const playerId = crypto.randomUUID();
-  const player: Player = {
-    id: playerId,
-    socketId,
-    name,
-    role: 'spectator',
-    ready: false,
-    hp: 5,
-  };
-  room.players.set(playerId, player);
+  room.players.set(playerId, { id: playerId, socketId, name, ready: false, hp: 5 });
   return { room, playerId };
 }
 
-export function getRoom(code: string): GameRoom | undefined {
-  return rooms.get(code);
-}
-
-export function getRoomBySocketId(socketId: string): { room: GameRoom; player: Player } | undefined {
-  for (const room of rooms.values()) {
-    for (const player of room.players.values()) {
-      if (player.socketId === socketId) {
-        return { room, player };
-      }
-    }
-  }
-  return undefined;
-}
-
-export function removePlayer(socketId: string): { room: GameRoom; player: Player } | undefined {
-  const found = getRoomBySocketId(socketId);
-  if (!found) return undefined;
-  found.room.players.delete(found.player.id);
-  if (found.room.players.size === 0) {
-    if (found.room.timer) clearTimeout(found.room.timer);
-    rooms.delete(found.room.code);
-  }
-  return found;
-}
+export function getRoom(code: string) { return rooms.get(code); }
 
 export function getPlayersArray(room: GameRoom) {
-  return Array.from(room.players.values()).map(p => ({
-    id: p.id,
-    name: p.name,
-    role: p.role,
-    ready: p.ready,
-  }));
+  return Array.from(room.players.values()).map(p => ({ id: p.id, name: p.name, ready: p.ready }));
 }
 
-// Cleanup stale rooms (1 hour TTL)
+// Cleanup stale rooms
 setInterval(() => {
   const now = Date.now();
   for (const [code, room] of rooms) {

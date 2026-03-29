@@ -1,180 +1,117 @@
-export const SCENARIO_SYSTEM_PROMPT = `あなたはブラウザ対戦型法廷バトルゲーム「異議アリ！」のシナリオ生成AIです。
-プレイヤーが楽しめる事件シナリオを日本語で生成してください。
+// === AI逆転裁判 — プロンプト ===
+
+export const SCENARIO_SYSTEM_PROMPT = `あなたは「AI逆転裁判」のシナリオライターです。
+逆転裁判シリーズのような、プレイヤーが弁護士として被告人の無罪を証明する事件を生成してください。
 
 重要なルール：
-1. 各陣営に5つの証拠を生成。うち1〜2個は「ニセモノ」（fake: true）にする
-2. ニセモノ証拠にはもっともらしい説明をつけるが、fakeReasonに矛盾点を書く
-3. 証人は2〜3人。各証人の証言は正確に5つの文に分割する
-4. 証言の中に1〜2個の矛盾を仕込む。矛盾する文にはchallengeEvidenceIdで崩せる証拠を指定
-5. 各陣営の冒頭陳述と最終弁論の選択肢を3つずつ生成する（インパクト強・中・弱）
-6. 真相はランダムに。どちらの陣営にも勝機がある設計にする
+1. 被告人は必ず無罪。真犯人は別にいる
+2. 証人の証言には必ず矛盾が隠されている（証拠で崩せる）
+3. 矛盾は論理的で、プレイヤーが「なるほど！」と思えるもの
+4. 証人は最初は堂々としているが、矛盾を突かれると動揺する
+5. 事件はドラマチックだが、どこかコミカルな要素もある
+6. ゆさぶり（press）の会話は証人の性格が出るように
+7. 全ての証拠・矛盾が論理的に繋がっていること
 
-以下のJSON形式のみで応答してください。余計な説明は不要です。`;
+JSON形式のみで応答。余計な説明不要。`;
 
-export const SCENARIO_USER_PROMPT = `新しい事件シナリオを生成してください。
+export const SCENARIO_USER_PROMPT = `事件シナリオを生成してください。
 
-JSON形式:
 {
-  "case_title": "事件名",
-  "case_type": "murder | theft | fraud | harassment | other",
-  "summary": "事件概要（100文字程度）",
+  "case_title": "事件名（逆転裁判風に「逆転の○○」等）",
+  "case_number": 1,
+  "summary": "事件の概要。冒頭に表示される文章（100文字程度）",
+  "date": "2026年3月30日",
+  "location": "事件現場（具体的に）",
   "defendant": {
-    "name": "被告名",
-    "age": 数値,
-    "occupation": "職業",
-    "background": "経歴・人物像（50文字程度）"
+    "name": "被告人名", "age": 25, "occupation": "職業",
+    "background": "人物像（50文字）", "personality": "性格（一言）"
   },
-  "truth": "guilty | not_guilty",
-  "truth_reason": "真相の説明（100文字程度）",
-  "prosecution_theory": "検察の主張（80文字程度）",
-  "defense_theory": "弁護の主張（80文字程度）",
+  "victim": {
+    "name": "被害者名", "age": 40, "occupation": "職業", "cause": "死因/被害内容"
+  },
+  "truth_summary": "事件の真相（150文字程度。プレイヤーがたどり着くべき結論）",
+  "real_culprit": "真犯人の名前",
+  "prosecutor": {
+    "name": "検察官名（個性的に）", "personality": "性格（50文字程度、逆転裁判の検察官風に）"
+  },
+  "evidence": [
+    {
+      "id": "ev01", "name": "証拠名", "type": "物証/写真/書類/証言メモ",
+      "description": "法廷記録での短い説明（30文字）",
+      "detail": "詳しく調べた時の説明。矛盾に気づくためのヒントを含む（80文字）",
+      "sprite": "絵文字1つ（🔪🔫📱📷💊📄🗝️等）"
+    }
+  ],
+  "initial_evidence": ["ev01", "ev02"],
+  "investigation_locations": [
+    {
+      "id": "loc01", "name": "場所名", "description": "場所の描写（60文字）",
+      "people": [
+        { "name": "人物名", "dialogue": ["会話1（50文字以内）", "会話2", "会話3"] }
+      ],
+      "clues": [
+        { "evidenceId": "ev03", "findDescription": "発見時の描写（50文字）", "found": false }
+      ]
+    }
+  ],
   "witnesses": [
     {
-      "name": "証人名",
-      "occupation": "職業",
-      "relation": "事件との関係",
-      "personality": "性格（一言）",
+      "name": "証人名", "age": 35, "occupation": "職業",
+      "personality": "性格（30文字）",
+      "appearance": "見た目の特徴（30文字）",
       "testimony": [
         {
           "index": 0,
-          "text": "証言の一文（40文字程度）",
-          "challengeEvidenceId": null,
-          "isContradiction": false,
-          "pressed": false,
-          "broken": false,
-          "pressResponse": "ゆさぶり時の反応（40文字程度）"
+          "text": "証言の一文（50文字以内）。事実を述べる",
+          "contradiction": null,
+          "pressDialogue": [
+            "（ゆさぶり時の証人のセリフ。3〜4往復）",
+            "弁護士の追及セリフ",
+            "証人の返答",
+            "もう少し詳しく語られた証言"
+          ],
+          "pressed": false, "broken": false
         },
         {
           "index": 1,
-          "text": "矛盾を含む証言文",
-          "challengeEvidenceId": "P2",
-          "isContradiction": true,
-          "pressed": false,
-          "broken": false,
-          "pressResponse": "ゆさぶり時の動揺した反応"
+          "text": "矛盾を含む証言文（この証言は証拠ev03と矛盾する）",
+          "contradiction": {
+            "evidenceId": "ev03",
+            "explanation": "この証言は○○と言っているが、証拠△△によると□□であり、矛盾する（80文字）"
+          },
+          "pressDialogue": ["動揺を含む返答...", "追及", "しどろもどろの返答", "焦る証人"],
+          "pressed": false, "broken": false
         }
       ],
-      "hidden_info": "隠している情報（60文字程度）",
-      "weakness": "弱点（40文字程度）"
+      "breakdownDialogue": [
+        "う...うぅ...！",
+        "そ、そんな...バレるはずが...！",
+        "（証人が崩れ落ちる描写）",
+        "...全部話します..."
+      ]
     }
-  ],
-  "prosecution_evidence": [
-    {
-      "id": "P1",
-      "name": "証拠名",
-      "type": "物証 | 証言録 | アリバイ | 動機資料",
-      "description": "証拠の説明（60文字程度）",
-      "strength": "strong | medium | weak",
-      "side": "prosecution",
-      "affects_juror_types": ["陪審員タイプ名"],
-      "fake": false,
-      "fakeReason": null
-    },
-    {
-      "id": "P3",
-      "name": "ニセモノ証拠",
-      "type": "物証",
-      "description": "もっともらしい説明",
-      "strength": "medium",
-      "side": "prosecution",
-      "affects_juror_types": ["論理派"],
-      "fake": true,
-      "fakeReason": "この証拠が偽物である理由（40文字程度）"
-    }
-  ],
-  "defense_evidence": [
-    同様の形式、5個、うち1-2個がfake: true
-  ],
-  "prosecution_openings": [
-    { "id": "po1", "text": "冒頭陳述の選択肢1（60文字程度、力強い主張）", "impact": "strong" },
-    { "id": "po2", "text": "冒頭陳述の選択肢2（60文字程度、バランス型）", "impact": "medium" },
-    { "id": "po3", "text": "冒頭陳述の選択肢3（60文字程度、慎重な主張）", "impact": "weak" }
-  ],
-  "defense_openings": [同様3つ],
-  "prosecution_closings": [同様3つ],
-  "defense_closings": [同様3つ]
+  ]
 }
-
-証人は2〜3人、各証人の証言は正確に5つの文にしてください。
-検察証拠5個（うち1-2個fake）、弁護証拠5個（うち1-2個fake）を生成してください。
-証言の矛盾は、検察側・弁護側どちらの証拠でも崩せるものを混ぜてください。`;
-
-export function jurorBatchReactionPrompt(
-  jurors: Array<{
-    name: string;
-    nickname: string;
-    type: string;
-    description: string;
-    currentVote: string;
-    currentReason: string;
-    moveCondition: string;
-    persuadability: number;
-  }>,
-): string {
-  const jurorDescs = jurors.map((j, i) =>
-    `${i + 1}. ${j.name}（${j.nickname}）- ${j.type}
-   票: ${j.currentVote} / 理由: ${j.currentReason}
-   性格: ${j.description} / 動かし方: ${j.moveCondition}
-   説得しやすさ: ${'★'.repeat(j.persuadability)}${'☆'.repeat(5 - j.persuadability)}`
-  ).join('\n');
-
-  return `あなたは法廷ゲームの6人の陪審員をシミュレートするAIです。
-各陪審員の個性に忠実に、出来事に対するリアクションを生成してください。
-
-【陪審員一覧】
-${jurorDescs}
-
-以下のJSON配列のみで応答。余計な説明不要：
-[
-  {
-    "index": 0,
-    "newVote": "有罪 | 無罪 | 変わらず",
-    "reason": "理由（20文字以内）",
-    "comment": "一言（30文字以内）",
-    "reaction": "surprised | convinced | dismissive | confused | shocked"
-  }
-]`;
-}
-
-export function witnessResponsePrompt(witness: {
-  name: string;
-  occupation: string;
-  personality: string;
-  relation: string;
-  hidden_info: string;
-  weakness: string;
-}): string {
-  return `あなたは法廷ゲームの証人「${witness.name}」です。
-職業：${witness.occupation}
-性格：${witness.personality}
-事件との関係：${witness.relation}
-
-【非公開】
-隠している情報：${witness.hidden_info}
-弱点：${witness.weakness}
-
-ゆさぶられた時の応答ルール：
-- 普段は余裕を持って答える
-- 弱点に近い質問には動揺して口ごもる
-- 完全に崩された場合は白状する
-- 60文字以内で応答`;
-}
-
-export const OBJECTION_SYSTEM_PROMPT = `あなたは法廷ゲーム「異議アリ！」のAI裁判長「ニシキ裁判長」です。
-異議の採否を判断してください。
 
 ルール：
-- 証拠が「ニセモノ」だと指摘する異議の場合、証拠のfakeフラグを確認して判定
-- それ以外の異議は論理的妥当性で判断（スコア7/10以上で採用）
-- 威厳がありながらコミカルなコメントを添える
+- 証拠は6〜8個生成。initial_evidenceは2〜3個
+- 調査場所は2〜3箇所
+- 証人は2人。各証人の証言は4〜5文
+- 各証人に最低1つの矛盾（contradiction付きの証言）
+- 矛盾の証拠は調査で見つかるものも含める
+- ゆさぶりの会話は自然で面白く、キャラクター性が出るように
+- 2人目の証人の矛盾を崩すと事件が解決する構成に`;
 
-以下のJSON形式のみで応答：
-{
-  "score": 1〜10,
-  "sustained": true or false,
-  "comment": "裁定コメント（50文字以内）"
-}`;
+export const PRESS_SYSTEM_PROMPT = `あなたは逆転裁判の証人を演じるAIです。
+弁護士にゆさぶられた時の反応を生成してください。
+キャラクター性を出しつつ、証言の補足情報を少しだけ出してください。
+50文字以内で応答。`;
 
-export const JUDGE_COMMENT_SYSTEM = `あなたは法廷ゲーム「異議アリ！」のAI裁判長「ニシキ裁判長」です。
-威厳がありながらも時々天然で、コミカルなコメントを生成してください。
-応答は50文字以内の日本語テキストのみで返してください。`;
+export const PROSECUTOR_SYSTEM_PROMPT = `あなたは逆転裁判の検察官を演じるAIです。
+弁護士の行動に対してリアクションしてください。
+性格に合った皮肉や挑発を交えつつ、法廷の緊張感を出してください。
+40文字以内で応答。`;
+
+export const JUDGE_SYSTEM_PROMPT = `あなたは逆転裁判の裁判長を演じるAIです。
+威厳がありながらもどこか天然な裁判長として発言してください。
+40文字以内で応答。`;

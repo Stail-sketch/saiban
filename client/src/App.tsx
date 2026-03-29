@@ -1,111 +1,29 @@
-import { useState } from 'react';
 import { useSocket } from './hooks/useSocket';
 import { useGameStore } from './stores/gameStore';
 import { LobbyScreen } from './components/lobby/LobbyScreen';
 import { CaseLoading } from './components/phases/CaseLoading';
-import { OpeningStatement } from './components/phases/OpeningStatement';
-import { ClosingArgument } from './components/phases/ClosingArgument';
-import { VerdictReveal } from './components/phases/VerdictReveal';
-import { TruthReveal } from './components/phases/TruthReveal';
+import { IntroScreen } from './components/phases/IntroScreen';
+import { InvestigationScreen } from './components/phases/InvestigationScreen';
+import { CourtScreen } from './components/phases/CourtScreen';
 import { ResultScreen } from './components/phases/ResultScreen';
-import { JurorPanel } from './components/jurors/JurorPanel';
-import { ChatArea } from './components/court/ChatArea';
-import { EvidenceBoard } from './components/court/EvidenceBoard';
-import { ActionBar } from './components/court/ActionBar';
-import { PhaseTimer } from './components/court/PhaseTimer';
-import { HpGauge } from './components/court/HpGauge';
-import { TestimonyDisplay, TestimonyChallengeUI } from './components/phases/TestimonyChallenge';
-import { EvidenceSubmitModal, WitnessSummonModal } from './components/phases/EvidencePhase';
-import { ObjectionOverlay } from './components/objection/ObjectionOverlay';
-import { ObjectionForm } from './components/objection/ObjectionForm';
-import { ObjectionRuling } from './components/objection/ObjectionRuling';
 
 export default function App() {
   useSocket();
   const phase = useGameStore(s => s.phase);
-  const [modal, setModal] = useState<string | null>(null);
-  const [showObjectionForm, setShowObjectionForm] = useState(false);
 
-  if (phase === 'lobby') return <LobbyScreen />;
-  if (phase === 'generating') return <CaseLoading />;
-  if (phase === 'result') return <ResultScreen />;
-
-  if (phase === 'verdict') {
-    return (<><VerdictReveal /><ObjectionOverlay /></>);
+  switch (phase) {
+    case 'lobby': return <LobbyScreen />;
+    case 'generating': return <CaseLoading />;
+    case 'intro': return <IntroScreen />;
+    case 'investigation': return <InvestigationScreen />;
+    case 'court_ready':
+    case 'testimony':
+    case 'cross_exam':
+    case 'objection_moment':
+    case 'breakdown':
+    case 'verdict':
+      return <CourtScreen />;
+    case 'result': return <ResultScreen />;
+    default: return <LobbyScreen />;
   }
-  if (phase === 'truth') return <TruthReveal />;
-
-  const renderMainContent = () => {
-    if (phase === 'opening_prosecution' || phase === 'opening_defense') {
-      return <OpeningStatement />;
-    }
-    if (phase === 'closing_prosecution' || phase === 'closing_defense') {
-      return <ClosingArgument />;
-    }
-    if (phase === 'witness_testimony') {
-      return <TestimonyDisplay />;
-    }
-    if (phase === 'witness_challenge') {
-      return <TestimonyChallengeUI />;
-    }
-    if (phase === 'evidence') {
-      return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: 8 }}>
-          <div style={{ flex: 1, overflow: 'hidden' }}>
-            <ChatArea />
-          </div>
-          <EvidenceBoard />
-          <ActionBar onAction={(action) => {
-            if (action === 'evidence') setModal('evidence');
-            else if (action === 'witness') setModal('witness');
-            else if (action === 'objection') setShowObjectionForm(true);
-          }} />
-        </div>
-      );
-    }
-    return <ChatArea />;
-  };
-
-  return (
-    <div style={styles.courtLayout}>
-      <div style={styles.topBar}>
-        <PhaseTimer />
-        <HpGauge />
-      </div>
-      <div style={styles.mainArea}>
-        <div style={styles.leftPanel}>
-          {renderMainContent()}
-        </div>
-        <div style={styles.rightPanel}>
-          <JurorPanel />
-        </div>
-      </div>
-
-      {modal === 'evidence' && <EvidenceSubmitModal onClose={() => setModal(null)} />}
-      {modal === 'witness' && <WitnessSummonModal onClose={() => setModal(null)} />}
-      {showObjectionForm && <ObjectionForm onClose={() => setShowObjectionForm(false)} />}
-
-      <ObjectionOverlay />
-      <ObjectionRuling />
-    </div>
-  );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  courtLayout: {
-    display: 'flex', flexDirection: 'column', height: '100vh',
-    background: 'var(--bg-primary)', overflow: 'hidden',
-  },
-  topBar: {
-    padding: '8px 16px', borderBottom: '1px solid var(--border)',
-  },
-  mainArea: {
-    flex: 1, display: 'flex', overflow: 'hidden', gap: 12, padding: 12,
-  },
-  leftPanel: {
-    flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden',
-  },
-  rightPanel: {
-    width: 300, flexShrink: 0, overflowY: 'auto',
-  },
-};

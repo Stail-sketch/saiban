@@ -1,32 +1,15 @@
 export type Phase =
-  | 'lobby'
-  | 'generating'
-  | 'opening_prosecution'
-  | 'opening_defense'
-  | 'evidence'
-  | 'witness_testimony'
-  | 'witness_challenge'
-  | 'closing_prosecution'
-  | 'closing_defense'
-  | 'verdict'
-  | 'truth'
-  | 'result';
-
-export type Role = 'prosecution' | 'defense' | 'spectator';
-
-export type EvidenceType = '物証' | '証言録' | 'アリバイ' | '動機資料';
-export type EvidenceStrength = 'strong' | 'medium' | 'weak';
+  | 'lobby' | 'generating' | 'intro' | 'investigation'
+  | 'court_ready' | 'testimony' | 'cross_exam'
+  | 'objection_moment' | 'breakdown' | 'verdict' | 'result';
 
 export interface Evidence {
   id: string;
   name: string;
-  type: EvidenceType;
+  type: string;
   description: string;
-  strength: EvidenceStrength;
-  side: 'prosecution' | 'defense';
-  affects_juror_types: string[];
-  fake?: boolean;
-  fakeReason?: string;
+  detail: string;
+  sprite: string;
 }
 
 export interface TestimonyStatement {
@@ -36,108 +19,58 @@ export interface TestimonyStatement {
   broken?: boolean;
 }
 
-export interface Witness {
-  name: string;
-  occupation: string;
-  relation: string;
-  personality: string;
-  testimony?: TestimonyStatement[];
-}
-
 export interface Defendant {
-  name: string;
-  age: number;
-  occupation: string;
-  background: string;
+  name: string; age: number; occupation: string; background: string; personality: string;
 }
 
-export interface OpeningChoice {
+export interface Victim {
+  name: string; age: number; occupation: string; cause: string;
+}
+
+export interface Prosecutor {
+  name: string; personality: string;
+}
+
+export interface DialogueMessage {
   id: string;
-  text: string;
-  impact: 'strong' | 'medium' | 'weak';
-}
-
-export interface CaseInfo {
-  case_title: string;
-  case_type: string;
-  summary: string;
-  defendant: Defendant;
-  prosecution_theory: string;
-  defense_theory: string;
-  witnesses: Witness[];
-  myEvidence?: Evidence[];
-  openings?: OpeningChoice[];
-  closings?: OpeningChoice[];
-}
-
-export interface PlayerInfo {
-  id: string;
-  name: string;
-  role: Role;
-  ready: boolean;
-}
-
-export interface ChatMessage {
-  id: string;
-  sender: string;
-  senderRole: 'prosecution' | 'defense' | 'judge' | 'witness' | 'system';
+  speaker: string;
+  speakerType: 'defense' | 'prosecutor' | 'judge' | 'witness' | 'narrator' | 'system';
   content: string;
   timestamp: number;
-  type?: string;
+  emotion?: string;
 }
 
-export type ObjectionType = '矛盾' | '関係なし' | '誘導尋問' | '根拠なし' | '偽証' | 'その他';
-
-export interface JurorState {
-  index: number;
+export interface InvestigationLocation {
+  id: string;
   name: string;
-  nickname: string;
-  type: string;
-  vote: '有罪' | '無罪';
-  reason: string;
-  comment: string;
-  reaction: string;
-  locked: boolean;
-  persuadability: number;
-}
-
-export interface JurorVerdictReveal {
-  index: number;
-  name: string;
-  nickname?: string;
-  vote: '有罪' | '無罪';
-  comment?: string;
-  revealed: boolean;
-}
-
-export interface HpState {
-  prosecution: number;
-  defense: number;
+  description: string;
+  people: string[];
+  clueCount: number;
 }
 
 export interface GameState {
   roomCode: string;
   phase: Phase;
-  players: PlayerInfo[];
-  myRole: Role;
   myPlayerId: string;
-  caseInfo: CaseInfo | null;
-  myEvidence: Evidence[];
-  publicEvidence: Evidence[];
-  jurors: JurorState[];
-  chatMessages: ChatMessage[];
-  currentTurn: 'prosecution' | 'defense' | null;
-  turnNumber: number;
-  maxTurns: number;
-  objectionsRemaining: { prosecution: number; defense: number };
-  timer: number;
-  timerMax: number;
-  hp: HpState;
-  // Witness/Testimony
+  playerName: string;
+  // Case info
+  caseTitle: string;
+  summary: string;
+  defendant: Defendant | null;
+  victim: Victim | null;
+  prosecutor: Prosecutor | null;
+  // Game state
+  evidence: Evidence[];
+  dialogue: DialogueMessage[];
+  hp: number;
+  maxHp: number;
+  // Investigation
+  locations: InvestigationLocation[];
+  currentLocation: any | null;
+  // Court
   testimonyStatements: TestimonyStatement[];
   currentWitnessName: string;
-  // Verdict
-  verdictRevealed: JurorVerdictReveal[];
-  truth: { guilty: boolean; reason: string } | null;
-  winner: 'prosecution' | 'defense' | null;
+  currentWitnessAppearance: string;
+  // Result
+  verdict: 'guilty' | 'not_guilty' | null;
 }

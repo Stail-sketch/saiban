@@ -7,119 +7,103 @@ export function useSocket() {
     socket.connect();
     const s = useGameStore.getState;
 
-    socket.on('room-created', (data) => {
-      s().setRoomCode(data.roomCode);
-      s().setMyPlayerId(data.playerId);
-      s().setPlayers(data.players);
-      sessionStorage.setItem('roomCode', data.roomCode);
-      sessionStorage.setItem('playerId', data.playerId);
+    socket.on('room-created', (d) => {
+      s().setRoomCode(d.roomCode); s().setMyPlayerId(d.playerId);
+      sessionStorage.setItem('roomCode', d.roomCode);
+      sessionStorage.setItem('playerId', d.playerId);
+    });
+    socket.on('room-joined', (d) => {
+      s().setRoomCode(d.roomCode); s().setMyPlayerId(d.playerId);
+      sessionStorage.setItem('roomCode', d.roomCode);
+      sessionStorage.setItem('playerId', d.playerId);
     });
 
-    socket.on('room-joined', (data) => {
-      s().setRoomCode(data.roomCode);
-      s().setMyPlayerId(data.playerId);
-      s().setPlayers(data.players);
-      sessionStorage.setItem('roomCode', data.roomCode);
-      sessionStorage.setItem('playerId', data.playerId);
+    socket.on('phase-change', (d) => {
+      s().setPhase(d.phase);
+      if (d.hp !== undefined) s().setHp(d.hp);
+      if (d.maxHp !== undefined) s().setMaxHp(d.maxHp);
     });
 
-    socket.on('player-joined', (data) => s().setPlayers(data.players));
-    socket.on('player-updated', (data) => {
-      s().setPlayers(data.players);
-      const me = data.players.find((p: any) => p.id === s().myPlayerId);
-      if (me) s().setMyRole(me.role);
+    socket.on('game-start', (d) => {
+      s().setCaseTitle(d.caseTitle);
+      s().setSummary(d.summary);
+      s().setDefendant(d.defendant);
+      s().setVictim(d.victim);
+      s().setProsecutor(d.prosecutor);
+      s().setEvidence(d.evidence);
+      s().setHp(d.hp); s().setMaxHp(d.maxHp);
     });
 
-    socket.on('phase-change', (data) => {
-      s().setPhase(data.phase);
-      if (data.timer) { s().setTimer(data.timer); s().setTimerMax(data.timer); }
-      if (data.currentTurn !== undefined) s().setCurrentTurn(data.currentTurn);
-      if (data.hp) s().setHp(data.hp);
-      // Reset testimony on new phase
-      if (data.phase === 'witness_testimony') {
-        s().setTestimonyStatements([]);
+    socket.on('dialogue', (d) => s().addDialogue(d));
+    socket.on('intro-complete', () => {});
+
+    // Investigation
+    socket.on('investigation-data', (d) => s().setLocations(d.locations));
+    socket.on('investigation-location', (d) => s().setCurrentLocation(d));
+    socket.on('talk-dialogue', (d) => {
+      for (const line of d.dialogue) {
+        s().addDialogue({ id: crypto.randomUUID(), speaker: d.personName, speakerType: 'witness', content: line, timestamp: Date.now() });
+      }
+    });
+    socket.on('evidence-found', (d) => {
+      s().addEvidence(d.evidence);
+      s().addDialogue({ id: crypto.randomUUID(), speaker: 'システム', speakerType: 'system', content: `${d.findDescription}\n証拠「${d.evidence.name}」を手に入れた！`, timestamp: Date.now() });
+    });
+    socket.on('evidence-list', (d) => s().setEvidence(d.evidence));
+
+    // Court
+    socket.on('court-ready', (d) => {
+      s().setCurrentWitnessName(d.witnessName);
+      if (d.witnessAppearance) s().setCurrentWitnessAppearance(d.witnessAppearance);
+    });
+    socket.on('testimony-title', (d) => {
+      s().setCurrentWitnessName(d.witnessName);
+      s().setCurrentWitnessAppearance(d.witnessAppearance);
+      s().setTestimonyStatements([]);
+      s().clearDialogue();
+    });
+    socket.on('testimony-statement', (d) => {
+      s().addDialogue({ id: crypto.randomUUID(), speaker: d.witnessName, speakerType: 'witness', content: d.statement.text, timestamp: Date.now() });
+    });
+    socket.on('cross-exam-start', (d) => {
+      s().setTestimonyStatements(d.statements);
+      s().setPhase('cross_exam');
+    });
+    socket.on('press-dialogue', (d) => {
+      s().updateStatement(d.statementIndex, { pressed: true });
+      for (let i = 0; i < d.dialogue.length; i++) {
+        const speaker = i % 2 === 0 ? d.witnessName : s().playerName || '弁護士';
+        const type = i % 2 === 0 ? 'witness' : 'defense';
+        s().addDialogue({ id: crypto.randomUUID(), speaker, speakerType: type as any, content: d.dialogue[i], timestamp: Date.now() + i });
       }
     });
 
-    socket.on('game-start', (data) => {
-      s().setCaseInfo(data.caseInfo);
-      s().setJurors(data.jurors);
-      s().setPlayers(data.players);
-      if (data.hp) s().setHp(data.hp);
-      if (data.caseInfo.myEvidence) s().setMyEvidence(data.caseInfo.myEvidence);
+    socket.on('objection-success', (d) => {
+      s().updateStatement(d.statementIndex, { broken: true });
+      s().setPhase('objection_moment');
+      s().addDialogue({ id: crypto.randomUUID(), speaker: 'システム', speakerType: 'system', content: d.explanation, timestamp: Date.now() });
     });
-
-    socket.on('chat-message', (msg) => s().addChatMessage(msg));
-    socket.on('juror-update', (data) => s().setJurors(data.jurors));
-    socket.on('chain-reaction', (data) => s().setJurors(data.jurors));
-    socket.on('evidence-submitted', (data) => s().addPublicEvidence(data.evidence));
-
-    socket.on('turn-change', (data) => {
-      s().setCurrentTurn(data.currentTurn);
-      s().setTurnNumber(data.turnNumber);
-      if (data.hp) s().setHp(data.hp);
+    socket.on('objection-fail', (d) => {
+      s().setHp(d.hp);
     });
-
-    socket.on('hp-change', (data) => {
-      s().updateHp(data.role, data.hp);
-    });
-
-    // Testimony events
-    socket.on('testimony-statement', (data) => {
-      s().setCurrentWitnessName(data.witnessName);
-      s().addTestimonyStatement(data.statement);
-    });
-
-    socket.on('testimony-press', (data) => {
-      s().updateTestimonyStatement(data.statementIndex, { pressed: true });
-    });
-
-    socket.on('testimony-break', (data) => {
-      if (data.success) {
-        s().updateTestimonyStatement(data.statementIndex, { broken: true });
+    socket.on('witness-breakdown', (d) => {
+      s().setPhase('breakdown');
+      for (const line of d.dialogue) {
+        s().addDialogue({ id: crypto.randomUUID(), speaker: d.witnessName, speakerType: 'witness', content: line, timestamp: Date.now(), emotion: 'breakdown' });
       }
     });
-
-    // Verdict events
-    socket.on('verdict-reveal', (data) => s().addVerdictReveal({ ...data, revealed: true }));
-    socket.on('verdict-result', (data) => s().setWinner(data.winner));
-    socket.on('truth-reveal', (data) => {
-      s().setTruth({ guilty: data.truth === 'guilty', reason: data.truthReason });
+    socket.on('verdict-result', (d) => {
+      s().setVerdict(d.verdict);
+    });
+    socket.on('game-over', () => {
+      s().setVerdict('guilty');
     });
 
-    // Objection events
-    socket.on('objection-ruled', (data) => {
-      if (data.bluffCaught && data.evidenceId) {
-        s().removePublicEvidence(data.evidenceId);
-      }
-    });
-
-    socket.on('rejoin-success', (data) => {
-      s().setRoomCode(data.roomCode);
-      s().setMyPlayerId(data.playerId);
-      s().setMyRole(data.myRole);
-      s().setPhase(data.phase);
-      if (data.caseInfo) s().setCaseInfo(data.caseInfo);
-      if (data.caseInfo?.myEvidence) s().setMyEvidence(data.caseInfo.myEvidence);
-      s().setJurors(data.jurors);
-      s().setPlayers(data.players);
-      s().setPublicEvidence(data.publicEvidence);
-      s().setChatMessages(data.chatMessages);
-      s().setCurrentTurn(data.currentTurn);
-      s().setTurnNumber(data.turnNumber);
-      s().setObjectionsRemaining(data.objectionsRemaining);
-      if (data.timer) s().setTimer(data.timer);
-      if (data.hp) s().setHp(data.hp);
-    });
-
-    socket.on('error', (data) => console.error('Server error:', data.message));
-
+    socket.on('error', (d) => console.error('Server:', d.message));
     socket.on('connect', () => {
-      const roomCode = sessionStorage.getItem('roomCode');
-      const playerId = sessionStorage.getItem('playerId');
-      if (roomCode && playerId && !s().roomCode) {
-        socket.emit('rejoin-room', { roomCode, playerId });
-      }
+      const rc = sessionStorage.getItem('roomCode');
+      const pi = sessionStorage.getItem('playerId');
+      if (rc && pi && !s().roomCode) socket.emit('rejoin-room', { roomCode: rc, playerId: pi });
     });
 
     return () => { socket.removeAllListeners(); socket.disconnect(); };

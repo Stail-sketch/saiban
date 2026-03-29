@@ -1,92 +1,66 @@
 import { create } from 'zustand';
-import type { GameState, Phase, PlayerInfo, JurorState, Evidence, ChatMessage, JurorVerdictReveal, TestimonyStatement, HpState } from '../types/game';
+import type { GameState, Phase, Evidence, DialogueMessage, TestimonyStatement, InvestigationLocation, Defendant, Victim, Prosecutor } from '../types/game';
 
 interface GameStore extends GameState {
-  setRoomCode: (code: string) => void;
+  setRoomCode: (c: string) => void;
   setMyPlayerId: (id: string) => void;
-  setMyRole: (role: GameState['myRole']) => void;
-  setPhase: (phase: Phase) => void;
-  setPlayers: (players: PlayerInfo[]) => void;
-  setCaseInfo: (info: GameState['caseInfo']) => void;
-  setMyEvidence: (ev: Evidence[]) => void;
-  setPublicEvidence: (ev: Evidence[]) => void;
-  addPublicEvidence: (ev: Evidence) => void;
-  setJurors: (jurors: JurorState[]) => void;
-  addChatMessage: (msg: ChatMessage) => void;
-  setChatMessages: (msgs: ChatMessage[]) => void;
-  setCurrentTurn: (turn: 'prosecution' | 'defense' | null) => void;
-  setTurnNumber: (n: number) => void;
-  setObjectionsRemaining: (obj: { prosecution: number; defense: number }) => void;
-  setTimer: (t: number) => void;
-  setTimerMax: (t: number) => void;
-  setHp: (hp: HpState) => void;
-  updateHp: (role: 'prosecution' | 'defense', hp: number) => void;
+  setPlayerName: (n: string) => void;
+  setPhase: (p: Phase) => void;
+  setCaseTitle: (t: string) => void;
+  setSummary: (s: string) => void;
+  setDefendant: (d: Defendant) => void;
+  setVictim: (v: Victim) => void;
+  setProsecutor: (p: Prosecutor) => void;
+  setEvidence: (e: Evidence[]) => void;
+  addEvidence: (e: Evidence) => void;
+  addDialogue: (d: DialogueMessage) => void;
+  clearDialogue: () => void;
+  setHp: (hp: number) => void;
+  setMaxHp: (m: number) => void;
+  setLocations: (l: InvestigationLocation[]) => void;
+  setCurrentLocation: (l: any) => void;
   setTestimonyStatements: (s: TestimonyStatement[]) => void;
-  addTestimonyStatement: (s: TestimonyStatement) => void;
-  updateTestimonyStatement: (index: number, update: Partial<TestimonyStatement>) => void;
-  setCurrentWitnessName: (name: string) => void;
-  addVerdictReveal: (v: JurorVerdictReveal) => void;
-  setTruth: (t: GameState['truth']) => void;
-  setWinner: (w: GameState['winner']) => void;
-  removePublicEvidence: (id: string) => void;
+  updateStatement: (index: number, update: Partial<TestimonyStatement>) => void;
+  setCurrentWitnessName: (n: string) => void;
+  setCurrentWitnessAppearance: (a: string) => void;
+  setVerdict: (v: 'guilty' | 'not_guilty') => void;
   reset: () => void;
 }
 
-const initialState: GameState = {
-  roomCode: '',
-  phase: 'lobby',
-  players: [],
-  myRole: 'spectator',
-  myPlayerId: '',
-  caseInfo: null,
-  myEvidence: [],
-  publicEvidence: [],
-  jurors: [],
-  chatMessages: [],
-  currentTurn: null,
-  turnNumber: 0,
-  maxTurns: 10,
-  objectionsRemaining: { prosecution: 3, defense: 3 },
-  timer: 0,
-  timerMax: 0,
-  hp: { prosecution: 5, defense: 5 },
-  testimonyStatements: [],
-  currentWitnessName: '',
-  verdictRevealed: [],
-  truth: null,
-  winner: null,
+const init: GameState = {
+  roomCode: '', phase: 'lobby', myPlayerId: '', playerName: '',
+  caseTitle: '', summary: '', defendant: null, victim: null, prosecutor: null,
+  evidence: [], dialogue: [], hp: 5, maxHp: 5,
+  locations: [], currentLocation: null,
+  testimonyStatements: [], currentWitnessName: '', currentWitnessAppearance: '',
+  verdict: null,
 };
 
 export const useGameStore = create<GameStore>((set) => ({
-  ...initialState,
-  setRoomCode: (code) => set({ roomCode: code }),
+  ...init,
+  setRoomCode: (c) => set({ roomCode: c }),
   setMyPlayerId: (id) => set({ myPlayerId: id }),
-  setMyRole: (role) => set({ myRole: role }),
-  setPhase: (phase) => set({ phase }),
-  setPlayers: (players) => set({ players }),
-  setCaseInfo: (info) => set({ caseInfo: info }),
-  setMyEvidence: (ev) => set({ myEvidence: ev }),
-  setPublicEvidence: (ev) => set({ publicEvidence: ev }),
-  addPublicEvidence: (ev) => set((s) => ({ publicEvidence: [...s.publicEvidence, ev] })),
-  setJurors: (jurors) => set({ jurors }),
-  addChatMessage: (msg) => set((s) => ({ chatMessages: [...s.chatMessages, msg] })),
-  setChatMessages: (msgs) => set({ chatMessages: msgs }),
-  setCurrentTurn: (turn) => set({ currentTurn: turn }),
-  setTurnNumber: (n) => set({ turnNumber: n }),
-  setObjectionsRemaining: (obj) => set({ objectionsRemaining: obj }),
-  setTimer: (t) => set({ timer: t }),
-  setTimerMax: (t) => set({ timerMax: t }),
+  setPlayerName: (n) => set({ playerName: n }),
+  setPhase: (p) => set({ phase: p }),
+  setCaseTitle: (t) => set({ caseTitle: t }),
+  setSummary: (s) => set({ summary: s }),
+  setDefendant: (d) => set({ defendant: d }),
+  setVictim: (v) => set({ victim: v }),
+  setProsecutor: (p) => set({ prosecutor: p }),
+  setEvidence: (e) => set({ evidence: e }),
+  addEvidence: (e) => set((s) => ({ evidence: [...s.evidence, e] })),
+  addDialogue: (d) => set((s) => ({ dialogue: [...s.dialogue, d] })),
+  clearDialogue: () => set({ dialogue: [] }),
   setHp: (hp) => set({ hp }),
-  updateHp: (role, hp) => set((s) => ({ hp: { ...s.hp, [role]: hp } })),
+  setMaxHp: (m) => set({ maxHp: m }),
+  setLocations: (l) => set({ locations: l }),
+  setCurrentLocation: (l) => set({ currentLocation: l }),
   setTestimonyStatements: (s) => set({ testimonyStatements: s }),
-  addTestimonyStatement: (s) => set((st) => ({ testimonyStatements: [...st.testimonyStatements, s] })),
-  updateTestimonyStatement: (index, update) => set((s) => ({
+  updateStatement: (index, update) => set((s) => ({
     testimonyStatements: s.testimonyStatements.map(t => t.index === index ? { ...t, ...update } : t),
   })),
-  setCurrentWitnessName: (name) => set({ currentWitnessName: name }),
-  addVerdictReveal: (v) => set((s) => ({ verdictRevealed: [...s.verdictRevealed, v] })),
-  setTruth: (t) => set({ truth: t }),
-  setWinner: (w) => set({ winner: w }),
-  removePublicEvidence: (id) => set((s) => ({ publicEvidence: s.publicEvidence.filter(e => e.id !== id) })),
-  reset: () => set(initialState),
+  setCurrentWitnessName: (n) => set({ currentWitnessName: n }),
+  setCurrentWitnessAppearance: (a) => set({ currentWitnessAppearance: a }),
+  setVerdict: (v) => set({ verdict: v }),
+  reset: () => set(init),
 }));

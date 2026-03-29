@@ -1,52 +1,55 @@
+// === AI逆転裁判 — 型定義 ===
+
 export type Phase =
   | 'lobby'
   | 'generating'
-  | 'opening_prosecution'
-  | 'opening_defense'
-  | 'evidence'
-  | 'witness_testimony'
-  | 'witness_challenge'
-  | 'closing_prosecution'
-  | 'closing_defense'
-  | 'verdict'
-  | 'truth'
+  | 'intro'           // 事件導入
+  | 'investigation'   // 探偵パート（証拠集め・聞き込み）
+  | 'court_ready'     // 法廷準備
+  | 'testimony'       // 証人の証言表示
+  | 'cross_exam'      // 尋問（ゆさぶる / つきつける）
+  | 'objection_moment'// 異議あり！演出中
+  | 'breakdown'       // 証人崩壊演出
+  | 'verdict'         // 判決
   | 'result';
-
-export type Role = 'prosecution' | 'defense' | 'spectator';
-
-export type EvidenceType = '物証' | '証言録' | 'アリバイ' | '動機資料';
-export type EvidenceStrength = 'strong' | 'medium' | 'weak';
 
 export interface Evidence {
   id: string;
   name: string;
-  type: EvidenceType;
+  type: string;
   description: string;
-  strength: EvidenceStrength;
-  side: 'prosecution' | 'defense';
-  affects_juror_types: string[];
-  fake: boolean; // ニセモノかどうか（所有者のみ見える）
-  fakeReason?: string; // ニセモノの理由
+  detail: string; // 法廷記録で見れる詳細
+  sprite: string; // アイコン用テキスト絵文字
 }
 
 export interface TestimonyStatement {
   index: number;
   text: string;
-  challengeEvidenceId: string | null; // この文を崩せる証拠ID（nullなら崩せない）
-  isContradiction: boolean; // 矛盾を含む文かどうか
-  pressed: boolean; // ゆさぶり済み
-  broken: boolean; // 崩れた
-  pressResponse: string; // ゆさぶり時の証人の反応
+  contradiction: {
+    evidenceId: string; // この証拠でつきつけると矛盾
+    explanation: string; // なぜ矛盾するかの説明
+  } | null;
+  pressDialogue: string[]; // ゆさぶり時の会話（証人→弁護士→証人...）
+  pressed: boolean;
+  broken: boolean;
 }
 
 export interface Witness {
   name: string;
+  age: number;
   occupation: string;
-  relation: string;
   personality: string;
+  appearance: string; // 見た目の描写
   testimony: TestimonyStatement[];
-  hidden_info: string;
-  weakness: string;
+  breakdownDialogue: string[]; // 崩壊時のセリフ群
+}
+
+export interface InvestigationLocation {
+  id: string;
+  name: string;
+  description: string;
+  people: { name: string; dialogue: string[] }[];
+  clues: { evidenceId: string; findDescription: string; found: boolean }[];
 }
 
 export interface Defendant {
@@ -54,64 +57,41 @@ export interface Defendant {
   age: number;
   occupation: string;
   background: string;
-}
-
-export interface OpeningChoice {
-  id: string;
-  text: string;
-  impact: 'strong' | 'medium' | 'weak';
+  personality: string;
 }
 
 export interface Scenario {
   case_title: string;
-  case_type: string;
-  summary: string;
+  case_number: number;
+  summary: string; // 冒頭で表示される事件概要
+  date: string;
+  location: string;
   defendant: Defendant;
-  truth: 'guilty' | 'not_guilty';
-  truth_reason: string;
-  prosecution_theory: string;
-  defense_theory: string;
+  victim: { name: string; age: number; occupation: string; cause: string };
+  truth_summary: string;
+  real_culprit: string; // 真犯人の名前
+  evidence: Evidence[]; // 全証拠（調査で集める）
+  initial_evidence: string[]; // 最初から持ってる証拠ID
   witnesses: Witness[];
-  prosecution_evidence: Evidence[];
-  defense_evidence: Evidence[];
-  prosecution_openings: OpeningChoice[];
-  defense_openings: OpeningChoice[];
-  prosecution_closings: OpeningChoice[];
-  defense_closings: OpeningChoice[];
-}
-
-export interface JurorState {
-  index: number;
-  name: string;
-  nickname: string;
-  type: string;
-  vote: '有罪' | '無罪';
-  reason: string;
-  comment: string;
-  reaction: 'neutral' | 'surprised' | 'convinced' | 'dismissive' | 'confused' | 'shocked';
-  locked: boolean;
-  lockedUntilTurn: number;
-  persuadability: number;
-  moveCondition: string;
-  description: string;
+  investigation_locations: InvestigationLocation[];
+  prosecutor: { name: string; personality: string }; // AI検察官
 }
 
 export interface Player {
   id: string;
   socketId: string;
   name: string;
-  role: Role;
   ready: boolean;
-  hp: number; // 信用ゲージ（初期5）
+  hp: number; // ライフ（初期5）
 }
 
 export interface ChatMessage {
   id: string;
-  sender: string;
-  senderRole: 'prosecution' | 'defense' | 'judge' | 'witness' | 'system';
+  speaker: string;
+  speakerType: 'defense' | 'prosecutor' | 'judge' | 'witness' | 'narrator' | 'system';
   content: string;
   timestamp: number;
-  type?: 'normal' | 'objection' | 'ruling' | 'testimony_break' | 'hp_change' | 'bluff_caught';
+  emotion?: string; // normal, angry, shocked, nervous, smirk, breakdown
 }
 
 export interface GameRoom {
@@ -120,19 +100,15 @@ export interface GameRoom {
   players: Map<string, Player>;
   phase: Phase;
   scenario: Scenario | null;
-  jurors: JurorState[];
-  publicEvidence: Evidence[];
+  collectedEvidence: string[]; // 収集済み証拠ID
   chatMessages: ChatMessage[];
-  currentTurn: 'prosecution' | 'defense' | null;
-  turnNumber: number;
-  maxTurns: number;
-  prosecutionTurns: number;
-  defenseTurns: number;
-  objectionsRemaining: { prosecution: number; defense: number };
+  currentWitnessIndex: number;
+  currentStatementIndex: number;
+  penaltyCount: number; // ペナルティ回数
+  maxPenalties: number; // 最大ペナルティ（5）
   timer: ReturnType<typeof setTimeout> | null;
   timerEnd: number;
   timerDuration: number;
-  currentWitnessIndex: number;
-  witnessExamTurn: 'prosecution' | 'defense' | null;
+  testimonyLoop: number; // 何周目の証言か
   createdAt: number;
 }

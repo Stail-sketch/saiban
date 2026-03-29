@@ -1,18 +1,13 @@
 import { useGameStore } from '../../stores/gameStore';
 
 export function ResultScreen() {
-  const winner = useGameStore(s => s.winner);
-  const myRole = useGameStore(s => s.myRole);
-  const truth = useGameStore(s => s.truth);
-  const jurors = useGameStore(s => s.jurors);
+  const verdict = useGameStore(s => s.verdict);
+  const caseTitle = useGameStore(s => s.caseTitle);
+  const defendant = useGameStore(s => s.defendant);
+  const dialogue = useGameStore(s => s.dialogue);
   const reset = useGameStore(s => s.reset);
 
-  const guiltyCount = jurors.filter(j => j.vote === '有罪').length;
-  const notGuiltyCount = jurors.filter(j => j.vote === '無罪').length;
-  const isWinner = winner === myRole;
-  const verdictMatchesTruth = truth
-    ? (guiltyCount >= 4 && truth.guilty) || (guiltyCount < 4 && !truth.guilty)
-    : false;
+  const won = verdict === 'not_guilty';
 
   const handlePlayAgain = () => {
     sessionStorage.removeItem('roomCode');
@@ -20,44 +15,45 @@ export function ResultScreen() {
     reset();
   };
 
+  // Find truth summary from dialogue
+  const truthLine = dialogue.find(d => d.speaker === 'ナレーター' && d.content.startsWith('真相'));
+
   return (
-    <div style={styles.container}>
+    <div style={styles.bg}>
       <div className="verdict-appear" style={styles.card}>
+        <div style={{ fontSize: 48, marginBottom: 8 }}>{won ? '⚖️' : '💀'}</div>
         <h1 style={{
-          ...styles.result,
-          color: isWinner ? 'var(--text-accent)' : 'var(--prosecution)',
+          ...styles.title,
+          color: won ? 'var(--not-guilty)' : 'var(--guilty)',
         }}>
-          {myRole === 'spectator' ? (winner === 'prosecution' ? '検察官の勝利' : '弁護人の勝利')
-           : isWinner ? '勝利！' : '敗北...'}
+          {won ? '無罪勝ち取り！' : '弁護失敗...'}
         </h1>
 
-        <div style={styles.stats}>
+        <div style={styles.caseTitle}>{caseTitle}</div>
+
+        <div style={styles.statBox}>
           <div style={styles.statRow}>
-            <span>評決</span>
-            <span style={{ fontWeight: 900, color: guiltyCount >= 4 ? 'var(--guilty)' : 'var(--not-guilty)' }}>
-              {guiltyCount >= 4 ? '有罪' : '無罪'} ({guiltyCount} - {notGuiltyCount})
+            <span>被告人</span>
+            <span>{defendant?.name}</span>
+          </div>
+          <div style={styles.statRow}>
+            <span>判決</span>
+            <span style={{ fontWeight: 900, color: won ? 'var(--not-guilty)' : 'var(--guilty)' }}>
+              {won ? '無罪' : '有罪'}
             </span>
           </div>
-          {truth && (
-            <>
-              <div style={styles.statRow}>
-                <span>真相</span>
-                <span style={{ fontWeight: 900, color: truth.guilty ? 'var(--guilty)' : 'var(--not-guilty)' }}>
-                  被告は{truth.guilty ? '犯人だった' : '無実だった'}
-                </span>
-              </div>
-              <div style={styles.statRow}>
-                <span>正義の実現</span>
-                <span style={{ fontWeight: 900, color: verdictMatchesTruth ? 'var(--not-guilty)' : 'var(--guilty)' }}>
-                  {verdictMatchesTruth ? '正しい判決！' : '冤罪 or 犯人を逃した...'}
-                </span>
-              </div>
-            </>
-          )}
         </div>
 
-        <button className="btn-primary" onClick={handlePlayAgain} style={{ width: '100%', padding: 16, fontSize: 18, marginTop: 20 }}>
-          もう一度遊ぶ
+        {truthLine && (
+          <div style={styles.truthBox}>
+            <div style={{ fontSize: 11, color: 'var(--text-accent)', marginBottom: 4, fontWeight: 900 }}>真相</div>
+            <div style={{ fontSize: 13, lineHeight: 1.6 }}>{truthLine.content.replace('真相：', '')}</div>
+          </div>
+        )}
+
+        <button className="btn-primary" onClick={handlePlayAgain}
+          style={{ width: '100%', padding: 16, fontSize: 18, marginTop: 16 }}>
+          次の事件へ
         </button>
       </div>
     </div>
@@ -65,39 +61,24 @@ export function ResultScreen() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  container: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: '100%',
-    background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+  bg: {
+    display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh',
+    background: 'radial-gradient(ellipse at center, #1a1028 0%, #0a0a12 70%)',
   },
   card: {
-    background: 'var(--bg-surface)',
-    borderRadius: 16,
-    padding: '40px 36px',
-    width: 420,
-    maxWidth: '90vw',
-    boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-    border: '1px solid var(--border)',
-    textAlign: 'center' as const,
+    background: 'linear-gradient(180deg, #16142a, #0e0e1a)', borderRadius: 16,
+    padding: '36px 32px', width: 440, maxWidth: '92vw', textAlign: 'center',
+    boxShadow: '0 0 60px rgba(255,215,0,0.05)', border: '1px solid var(--border-gold)',
   },
-  result: {
-    fontSize: 36,
-    fontWeight: 900,
-    marginBottom: 24,
-  },
-  stats: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: 12,
-  },
+  title: { fontFamily: 'var(--font-display)', fontSize: 28, letterSpacing: 4, marginBottom: 12 },
+  caseTitle: { fontSize: 14, color: 'var(--text-secondary)', marginBottom: 16 },
+  statBox: { display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 },
   statRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    padding: '10px 16px',
-    background: 'var(--bg-card)',
-    borderRadius: 8,
-    fontSize: 14,
+    display: 'flex', justifyContent: 'space-between', padding: '10px 14px',
+    background: 'var(--bg-card)', borderRadius: 6, fontSize: 14,
+  },
+  truthBox: {
+    padding: '12px 14px', background: 'rgba(255,215,0,0.05)',
+    borderRadius: 8, border: '1px solid var(--border-gold)', textAlign: 'left',
   },
 };
